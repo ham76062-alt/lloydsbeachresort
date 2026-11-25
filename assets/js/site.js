@@ -5,10 +5,11 @@ var LLOYDS = {
   phone: '055 797 4777',
   phoneIntl: '+233 55 797 4777',
   phoneHref: '0557974777',
-  /* No messaging-app links: no number has been confirmed by management, and
-     the brief says to use the number management provides. The resort must
-     confirm its messaging line before any such link is added — a one-line
-     change here. */
+  /* WhatsApp line, confirmed by the user 2026-11-25: booking enquiries are
+     sent to the resort's WhatsApp on 055 797 4777 (wa.me/233557974777).
+     Booking form only — no WhatsApp on the spa, event or contact forms,
+     and no floating WhatsApp button anywhere on the site. */
+  whatsapp: '233557974777',
   address: 'Langma, Kokrobite, Greater Accra Region, Ghana',
   plusCode: 'FJJ5+G2 Kokrobite',
   latitude: 5.4813735,
@@ -65,7 +66,7 @@ var LLOYDS = {
   function summaryRows(rows) {
     return rows.map(function (r) { return '<dt>' + esc(r[0]) + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
   }
-  function wireForm(form, fields, validate, buildSummary) {
+  function wireForm(form, fields, validate, buildSummary, onSuccess) {
     form.addEventListener('submit', function (ev) {
       ev.preventDefault();
       var err = form.querySelector('.form-error');
@@ -81,15 +82,15 @@ var LLOYDS = {
       err.classList.remove('show');
       var problem = validate(f);
       if (problem) { return fail(problem); }
-      /* No backend and no messaging-app link: show the enquiry back to the
-         guest with the phone number to call, so they can confirm it with
-         the resort. */
+      /* No backend: show the enquiry back to the guest with the phone
+         number to call, so they can confirm it with the resort. */
       var sum = form.querySelector('.form-summary');
       if (sum) { sum.innerHTML = buildSummary(f); }
       var fieldsEl = form.querySelector('.form-fields');
       var ok = form.querySelector('.form-ok');
       if (fieldsEl) { fieldsEl.style.display = 'none'; }
       if (ok) { ok.classList.add('show'); ok.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      if (onSuccess) { onSuccess(f, form); }
     });
     var again = form.querySelector('[data-again]');
     if (again) {
@@ -107,6 +108,26 @@ var LLOYDS = {
     if (!f.checkout.value) { return 'Please choose a check-out date.'; }
     if (f.checkout.value <= f.checkin.value) { return 'Check-out must be after check-in.'; }
     return null;
+  }
+
+  /* ---- Booking enquiry -> WhatsApp (booking form only) ---- */
+  function bookingWhatsAppUrl(f) {
+    var inD = new Date(f.checkin.value + 'T00:00:00');
+    var outD = new Date(f.checkout.value + 'T00:00:00');
+    var nights = Math.round((outD - inD) / 86400000);
+    var lines = ['Hello Lloyds Beach Resort & Spa, I would like to book:'];
+    lines.push('Room: ' + f.room.value);
+    lines.push('Check-in: ' + f.checkin.value);
+    lines.push('Check-out: ' + f.checkout.value);
+    lines.push('Nights: ' + nights);
+    var guests = f.adults.value;
+    if (f.children.value && f.children.value !== 'No children') { guests += ', ' + f.children.value; }
+    lines.push('Guests: ' + guests);
+    lines.push('Name: ' + f.name.value.trim());
+    lines.push('Phone: ' + f.phone.value.trim());
+    if (f.email.value.trim()) { lines.push('Email: ' + f.email.value.trim()); }
+    if (f.requests.value.trim()) { lines.push('Special requests: ' + f.requests.value.trim()); }
+    return 'https://wa.me/' + LLOYDS.whatsapp + '?text=' + encodeURIComponent(lines.join('\n'));
   }
 
   /* ---- Room booking enquiry forms ---- */
@@ -130,6 +151,12 @@ var LLOYDS = {
           ['Email', f.email.value.trim() || 'Not given'],
           ['Special requests', f.requests.value.trim() || 'None']
         ]);
+      },
+      function (f, form) {
+        var url = bookingWhatsAppUrl(f);
+        var waBtn = form.querySelector('[data-whatsapp]');
+        if (waBtn) { waBtn.href = url; }
+        window.open(url, '_blank');
       });
   });
 
