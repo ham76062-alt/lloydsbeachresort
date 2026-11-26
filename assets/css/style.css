@@ -399,6 +399,7 @@ h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.15;color:var(
 .crm-subtab{padding:8px 16px;border-radius:999px;border:1px solid var(--ocean);background:transparent;color:var(--ocean);cursor:pointer;font:inherit;font-size:.9rem}
 .crm-subtab.active{background:var(--ocean);color:#fff}
 .crm-pills{display:flex;gap:8px;flex-wrap:wrap}
+#crm-guests .admin-filters{grid-template-columns:280px 1fr;max-width:760px}
 .crm-pill{padding:8px 14px;border-radius:999px;border:1px solid #d8cdb6;background:#fff;color:var(--ink);cursor:pointer;font:inherit;font-size:.9rem}
 .crm-pill.active{background:var(--ocean);border-color:var(--ocean);color:#fff}
 .guest-row{cursor:pointer}
@@ -445,6 +446,7 @@ h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.15;color:var(
 @media (max-width:640px){
   .admin-rooms{grid-template-columns:1fr}
   .admin-filters{grid-template-columns:1fr}
+  #crm-guests .admin-filters{grid-template-columns:1fr}
   .admin-table thead{display:none}
   .admin-table,.admin-table tbody,.admin-table tr,.admin-table td{display:block;width:100%}
   .admin-table tr{border-bottom:1px solid var(--line);padding:8px 0}

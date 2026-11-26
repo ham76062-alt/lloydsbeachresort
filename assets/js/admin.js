@@ -67,11 +67,12 @@
     showLogin();
   });
   $('adminReset').addEventListener('click', function () {
-    if (!window.confirm('Reset the demo? All bookings, prices, blocked dates and details go back to the sample data.')) { return; }
+    if (!window.confirm('Reset the demo? All bookings, guests, prices, blocked dates and details go back to the sample data.')) { return; }
     store.resetDemo();
     avYear = null; avMonth = null;
     crmView = 'guests'; guestFilter = 'all'; guestSearchQ = ''; selectedGuestId = null;
     var gs = $('guestSearch'); if (gs) { gs.value = ''; }
+    var baf = $('bookingAddForm'); if (baf) { baf.style.display = 'none'; baf.reset(); }
     renderAll();
     window.scrollTo(0, 0);
   });
@@ -111,6 +112,15 @@
     });
     var av = $('avRoom');
     if (av && !av.value) { av.value = rooms.length ? rooms[0].id : ''; }
+    /* Add-booking form: room options carry the nightly price. */
+    var ba = $('ba-room');
+    if (ba) {
+      var curBa = ba.value;
+      ba.innerHTML = rooms.map(function (r) {
+        return '<option value="' + esc(r.name) + '">' + esc(r.name) + ' — GH₵' + store.fmt(r.price) + ' / night</option>';
+      }).join('');
+      if (curBa && rooms.some(function (r) { return r.name === curBa; })) { ba.value = curBa; }
+    }
   }
 
   /* ---------- bookings ---------- */
@@ -177,6 +187,91 @@
   $('fltStatus').addEventListener('change', renderBookings);
   $('fltRoom').addEventListener('change', renderBookings);
 
+  /* ---------- add booking (staff) ----------
+     Staff add a booking here with room, dates, guests, total and status —
+     the Guests tab has no add form. The booking is saved with the chosen
+     status, then the guest wiring runs: Confirmed -> guest appears with
+     the upcoming stay; Completed -> the stay joins their history; New
+     (a WhatsApp enquiry) -> no guest is created. */
+  function bookingAddCalc() {
+    var roomName = $('ba-room').value;
+    var ci = $('ba-checkin').value, co = $('ba-checkout').value;
+    var nights = store.nightsBetween(ci, co);
+    var price = roomName ? store.getPrice(roomName) : null;
+    $('ba-nights').textContent = nights > 0 ? nights + (nights === 1 ? ' night' : ' nights') : '—';
+    var totalEl = $('ba-total');
+    if (price != null && nights > 0) { totalEl.value = price * nights; }
+    else if (nights <= 0) { totalEl.value = ''; }
+  }
+  $('bookingAddBtn').addEventListener('click', function () {
+    var f = $('bookingAddForm');
+    var show = f.style.display === 'none';
+    f.style.display = show ? '' : 'none';
+    $('bookingAddSaved').textContent = '';
+    if (show) {
+      var today = dstr(new Date());
+      $('ba-checkin').min = today;
+      $('ba-checkout').min = today;
+      bookingAddCalc();
+    }
+  });
+  $('bookingAddCancel').addEventListener('click', function () {
+    $('bookingAddForm').style.display = 'none';
+    $('bookingAddForm').reset();
+    $('ba-status').value = 'Confirmed';
+    bookingAddCalc();
+  });
+  function onBaFieldChange() {
+    if ($('ba-checkin').value) {
+      var d = parseDay($('ba-checkin').value);
+      if (d) {
+        d.setDate(d.getDate() + 1);
+        $('ba-checkout').min = dstr(d);
+      }
+    }
+    bookingAddCalc();
+  }
+  ['ba-room', 'ba-checkin', 'ba-checkout'].forEach(function (id) {
+    $(id).addEventListener('change', onBaFieldChange);
+    /* Date fields fire 'input' when picked/typed — calc live on both. */
+    if (id !== 'ba-room') { $(id).addEventListener('input', onBaFieldChange); }
+  });
+  $('bookingAddForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = $('bookingAddForm');
+    var err = f.querySelector('.form-error');
+    var saved = $('bookingAddSaved');
+    err.classList.remove('show');
+    saved.textContent = '';
+    var name = f.querySelector('[name="name"]').value.trim();
+    var phone = f.querySelector('[name="phone"]').value.trim();
+    var room = f.querySelector('[name="room"]').value;
+    var ci = f.querySelector('[name="checkin"]').value;
+    var co = f.querySelector('[name="checkout"]').value;
+    var guests = f.querySelector('[name="guests"]').value;
+    var status = f.querySelector('[name="status"]').value;
+    var totalVal = f.querySelector('[name="total"]').value;
+    if (!name) { err.textContent = 'Enter the guest\u2019s name.'; err.classList.add('show'); return; }
+    if (!phone) { err.textContent = 'Enter the guest\u2019s phone number.'; err.classList.add('show'); return; }
+    if (!room) { err.textContent = 'Choose a room type.'; err.classList.add('show'); return; }
+    if (!ci) { err.textContent = 'Please choose a check-in date.'; err.classList.add('show'); return; }
+    if (!co) { err.textContent = 'Please choose a check-out date.'; err.classList.add('show'); return; }
+    if (co <= ci) { err.textContent = 'Check-out must be after check-in.'; err.classList.add('show'); return; }
+    if (ci < dstr(new Date())) { err.textContent = 'Check-in cannot be in the past.'; err.classList.add('show'); return; }
+    var total = totalVal === '' ? null : Math.round(Number(totalVal));
+    if (total != null && !(total > 0)) { err.textContent = 'Enter a total above 0.'; err.classList.add('show'); return; }
+    var chk = store.check(room, ci, co);
+    if (!chk.ok) { err.textContent = chk.reason; err.classList.add('show'); return; }
+    var booking = store.addBooking({ guest: name, phone: phone, room: room, checkin: ci, checkout: co, guests: guests, total: total, status: status });
+    store.syncBookingGuest(booking.id);
+    f.reset();
+    $('ba-status').value = 'Confirmed';
+    f.style.display = 'none';
+    bookingAddCalc();
+    renderBookings();
+    saved.textContent = 'Booking saved.';
+  });
+
   /* ---------- guests (CRM) ----------
      Stats and insights are computed from the guest records in the demo
      store, so they move when a guest is added or a stay is completed. */
@@ -205,33 +300,6 @@
   $('guestSearch').addEventListener('input', function () {
     guestSearchQ = $('guestSearch').value.trim().toLowerCase();
     renderGuestList();
-  });
-  $('guestAddBtn').addEventListener('click', function () {
-    var f = $('guestAddForm');
-    f.style.display = f.style.display === 'none' ? '' : 'none';
-    $('guestAddSaved').textContent = '';
-  });
-  $('guestAddCancel').addEventListener('click', function () {
-    $('guestAddForm').style.display = 'none';
-    $('guestAddForm').reset();
-  });
-  $('guestAddForm').addEventListener('submit', function (ev) {
-    ev.preventDefault();
-    var f = $('guestAddForm');
-    var err = f.querySelector('.form-error');
-    err.classList.remove('show');
-    var name = f.querySelector('[name="name"]').value.trim();
-    var phone = f.querySelector('[name="phone"]').value.trim();
-    var notes = f.querySelector('[name="notes"]').value.trim();
-    if (!name) { err.textContent = 'Enter the guest\u2019s name.'; err.classList.add('show'); return; }
-    if (!phone) { err.textContent = 'Enter the guest\u2019s phone number.'; err.classList.add('show'); return; }
-    var guest = store.addGuest({ name: name, phone: phone, notes: notes });
-    f.reset();
-    f.style.display = 'none';
-    selectedGuestId = guest.id;
-    renderGuestList();
-    var saved = $('guestAddSaved');
-    if (saved) { saved.textContent = ''; }
   });
 
   function renderGuests() {

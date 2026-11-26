@@ -271,7 +271,9 @@
       nights: nights,
       guests: b.guests || '',
       requests: b.requests || '',
-      total: (room && nights > 0) ? room.price * nights : (b.total || null),
+      /* An explicit total wins (staff can adjust it, e.g. for a discount);
+         otherwise price x nights, as the website booking form relies on. */
+      total: (b.total != null && b.total !== '' && !isNaN(Number(b.total))) ? Math.round(Number(b.total)) : ((room && nights > 0) ? room.price * nights : (b.total || null)),
       status: b.status || 'New',
       sample: !!b.sample,
       created: new Date().toISOString()

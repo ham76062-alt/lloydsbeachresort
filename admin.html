@@ -119,12 +119,27 @@
 
       <div id="tab-bookings" class="admin-panel">
         <h2>Bookings</h2>
-        <p class="admin-note">Bookings from the website booking form, plus the sample bookings below. Bookings marked <span class="sample-pill">Sample</span> are demo data.</p>
+        <p class="admin-note">Bookings from the website booking form and bookings added here by staff, plus the sample bookings below. Bookings marked <span class="sample-pill">Sample</span> are demo data.</p>
         <div class="admin-stats" id="bookingStats"></div>
         <div class="admin-filters">
           <div class="field"><label for="fltStatus">Status</label><select id="fltStatus"><option value="">All statuses</option><option>New</option><option>Confirmed</option><option>Cancelled</option><option>Completed</option></select></div>
           <div class="field"><label for="fltRoom">Room</label><select id="fltRoom"><option value="">All rooms</option></select></div>
         </div>
+        <p><button class="btn small" id="bookingAddBtn" type="button">Add booking</button> <span class="admin-saved" id="bookingAddSaved" role="status"></span></p>
+        <form id="bookingAddForm" class="admin-form" style="display:none" novalidate>
+          <div class="form-error" role="alert"></div>
+          <div class="field"><label for="ba-name">Guest name</label><input id="ba-name" name="name" type="text" placeholder="Guest's full name"></div>
+          <div class="field"><label for="ba-phone">Phone</label><input id="ba-phone" name="phone" type="tel" placeholder="055 000 0000"></div>
+          <div class="field"><label for="ba-room">Room type</label><select id="ba-room" name="room"></select></div>
+          <div class="field"><label for="ba-checkin">Check-in</label><input id="ba-checkin" name="checkin" type="date"></div>
+          <div class="field"><label for="ba-checkout">Check-out</label><input id="ba-checkout" name="checkout" type="date"></div>
+          <div class="field"><label for="ba-guests">Guests</label><select id="ba-guests" name="guests"><option>1 adult</option><option selected>2 adults</option><option>2 adults, 1 child</option><option>2 adults, 2 children</option><option>3 adults</option><option>4 adults</option></select></div>
+          <div class="field"><label>Nights</label><p class="admin-note" id="ba-nights" style="margin:0">—</p></div>
+          <div class="field"><label for="ba-total">Total (GH₵)</label><input id="ba-total" name="total" type="number" min="0" step="1" placeholder="Auto-calculated from the room price"></div>
+          <div class="field"><label for="ba-status">Status</label><select id="ba-status" name="status"><option>New</option><option selected>Confirmed</option><option>Cancelled</option><option>Completed</option></select></div>
+          <button class="btn" type="submit">Save booking</button>
+          <button class="btn ghost-dark" id="bookingAddCancel" type="button">Cancel</button>
+        </form>
         <div id="bookingList"></div>
       </div>
 
@@ -147,16 +162,6 @@
               <button class="crm-pill" data-guest-filter="vip" type="button">VIP</button>
             </div></div>
           </div>
-          <p><button class="btn small" id="guestAddBtn" type="button">Add guest</button></p>
-          <form id="guestAddForm" class="admin-form" style="display:none" novalidate>
-            <div class="form-error" role="alert"></div>
-            <div class="field"><label for="ga-name">Name</label><input id="ga-name" name="name" type="text" placeholder="Guest's full name"></div>
-            <div class="field"><label for="ga-phone">Phone</label><input id="ga-phone" name="phone" type="tel" placeholder="055 000 0000"></div>
-            <div class="field"><label for="ga-notes">Notes</label><input id="ga-notes" name="notes" type="text" placeholder="e.g. Walk-in, prefers a quiet room"></div>
-            <button class="btn" type="submit">Save guest</button>
-            <button class="btn ghost-dark" id="guestAddCancel" type="button">Cancel</button>
-            <span class="admin-saved" id="guestAddSaved" role="status"></span>
-          </form>
           <div id="guestList"></div>
           <div id="guestDetail"></div>
         </div>
