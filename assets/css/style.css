@@ -393,6 +393,35 @@ h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.15;color:var(
 .admin-room .field{margin-bottom:0}
 .admin-room .btn{margin-top:14px}
 .admin-saved{color:var(--ocean);font-weight:600;margin-left:12px}
+
+/* ---- Guests tab (CRM) ---- */
+.crm-subtabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.crm-subtab{padding:8px 16px;border-radius:999px;border:1px solid var(--ocean);background:transparent;color:var(--ocean);cursor:pointer;font:inherit;font-size:.9rem}
+.crm-subtab.active{background:var(--ocean);color:#fff}
+.crm-pills{display:flex;gap:8px;flex-wrap:wrap}
+.crm-pill{padding:8px 14px;border-radius:999px;border:1px solid #d8cdb6;background:#fff;color:var(--ink);cursor:pointer;font:inherit;font-size:.9rem}
+.crm-pill.active{background:var(--ocean);border-color:var(--ocean);color:#fff}
+.guest-row{cursor:pointer}
+.guest-tags{display:flex;gap:6px;flex-wrap:wrap}
+.guest-tag{font-size:.72rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:var(--sand-2);color:var(--ocean);white-space:nowrap}
+.guest-tag.vip{background:#f3e2a8;color:#6b5312}
+.guest-detail{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-top:20px}
+.guest-detail h3{margin-bottom:4px}
+.guest-detail .meta{color:var(--muted);font-size:.92rem;margin-bottom:14px}
+.guest-detail textarea{width:100%;min-height:74px;padding:10px 12px;border:1px solid #d8cdb6;border-radius:8px;font:inherit;font-size:.95rem}
+.guest-detail .field{margin-bottom:14px}
+.crm-followups{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.followup-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.followup-card h3{margin-bottom:4px;font-size:1.05rem}
+.followup-card p{color:var(--muted);font-size:.92rem;margin-bottom:12px}
+.followup-msg{background:var(--sand-2);border-radius:8px;padding:12px 14px;font-size:.95rem;margin:12px 0;white-space:pre-wrap}
+.followup-card.sent{opacity:.7}
+.crm-bars{display:grid;gap:22px;max-width:640px}
+.crm-bar-row .bar-label{display:flex;justify-content:space-between;gap:12px;font-size:.92rem;margin-bottom:6px}
+.crm-bar{height:12px;background:var(--sand-2);border-radius:999px;overflow:hidden}
+.crm-bar i{display:block;height:100%;background:var(--ocean);border-radius:999px}
+.crm-bar.gold i{background:var(--gold)}
+.crm-bars h3{margin-bottom:2px}
 .admin-form{max-width:560px}
 .admin-form .field{margin-bottom:14px}
 .av-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;max-width:640px}
@@ -424,6 +453,7 @@ h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.15;color:var(
   .admin-bar{flex-direction:column;align-items:flex-start}
   .av-day{font-size:.8rem}
   .av-day .b{font-size:.55rem;line-height:1.25;text-align:center}
+  .crm-followups{grid-template-columns:1fr}
 }
 
 /* ---- Tonight availability badge (rooms page + room detail pages) ---- */

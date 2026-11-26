@@ -69,6 +69,8 @@
         'standard-double': [plusDays(9)],
         'deluxe-suite': [plusDays(14), plusDays(15)]
       },
+      guests: seedGuests(),
+      followups: seedFollowups(),
       settings: {
         phone: '055 797 4777',
         whatsapp: '233557974777',
@@ -81,6 +83,100 @@
     };
   }
 
+  /* ---------- guests (CRM) ----------
+     Sample guests. A guest only exists once a booking is confirmed — a
+     WhatsApp enquiry ("New") never creates one. The 5 sample bookings
+     are part of these guests' histories: Ama's upcoming confirmed stay
+     (demo-b1) and Efua's completed stay (demo-b3). Stay totals are the
+     amounts recorded for those stays; room rates have changed over time,
+     so an old stay need not equal today's price x nights. */
+  function seedGuests() {
+    return [
+      { id: 'g-ama', sample: true, name: 'Ama Serwaa', phone: '024 123 4567', email: 'ama@example.com',
+        prefs: 'Prefers a quiet room; asks about the Queen Suite.',
+        notes: 'Regular guest — always books ahead.',
+        tags: [],
+        stays: [
+          { bookingId: null, checkin: '2026-10-09', checkout: '2026-10-11', room: 'Standard Double Room', roomId: 'standard-double', nights: 2, total: 1636, status: 'Completed' },
+          { bookingId: null, checkin: '2026-06-12', checkout: '2026-06-14', room: 'Standard Double Room', roomId: 'standard-double', nights: 2, total: 1636, status: 'Completed' },
+          { bookingId: null, checkin: '2026-03-06', checkout: '2026-03-08', room: 'Standard Double Room', roomId: 'standard-double', nights: 2, total: 1636, status: 'Completed' },
+          { bookingId: 'demo-b1', checkin: plusDays(4), checkout: plusDays(6), room: 'Standard Double Room', roomId: 'standard-double', nights: 2, total: 1636, status: 'Confirmed' }
+        ] },
+      { id: 'g-kwame', sample: true, name: 'Kwame Mensah', phone: '055 234 5678', email: 'kwame@example.com',
+        prefs: 'Quiet room if possible; early check-in.',
+        notes: 'Business trips, usually midweek.',
+        tags: [],
+        stays: [
+          { bookingId: null, checkin: '2026-09-18', checkout: '2026-09-20', room: 'Deluxe Suite', roomId: 'deluxe-suite', nights: 2, total: 1920, status: 'Completed' },
+          { bookingId: null, checkin: '2026-05-08', checkout: '2026-05-09', room: 'Deluxe Suite', roomId: 'deluxe-suite', nights: 1, total: 960, status: 'Completed' }
+        ] },
+      { id: 'g-efua', sample: true, name: 'Efua Boateng', phone: '020 345 6789', email: 'efua@example.com',
+        prefs: 'Honeymoon — asked about the spa package.',
+        notes: 'First stay was her honeymoon.',
+        tags: [],
+        stays: [
+          { bookingId: 'demo-b3', checkin: plusDays(-5), checkout: plusDays(-3), room: 'King Room', roomId: 'king-room', nights: 2, total: 3082, status: 'Completed' }
+        ] },
+      { id: 'g-yaw', sample: true, name: 'Yaw Owusu', phone: '027 456 7890', email: 'yaw@example.com',
+        prefs: 'Always books the Family Suite; 2 kids.',
+        notes: 'VIP — visits every few months.',
+        tags: ['VIP'],
+        stays: [
+          { bookingId: null, checkin: '2026-11-06', checkout: '2026-11-07', room: 'Family Suite', roomId: 'family-suite', nights: 1, total: 2062, status: 'Completed' },
+          { bookingId: null, checkin: '2026-08-14', checkout: '2026-08-15', room: 'Family Suite', roomId: 'family-suite', nights: 1, total: 2062, status: 'Completed' },
+          { bookingId: null, checkin: '2026-05-01', checkout: '2026-05-02', room: 'Family Suite', roomId: 'family-suite', nights: 1, total: 2062, status: 'Completed' },
+          { bookingId: null, checkin: '2026-02-13', checkout: '2026-02-14', room: 'Family Suite', roomId: 'family-suite', nights: 1, total: 2062, status: 'Completed' }
+        ] },
+      { id: 'g-akosua', sample: true, name: 'Akosua Frimpong', phone: '054 567 8901', email: 'akosua@example.com',
+        prefs: '',
+        notes: 'Cancelled a booking once; rebooked for December.',
+        tags: [],
+        stays: [
+          { bookingId: null, checkin: '2026-07-10', checkout: '2026-07-12', room: 'Queen Suite', roomId: 'queen-suite', nights: 2, total: 2228, status: 'Completed' }
+        ] },
+      { id: 'g-kofi', sample: true, name: 'Kofi Asante', phone: '055 777 0011', email: '',
+        prefs: 'Surfer — asks about beach conditions.',
+        notes: 'Interested in surf lessons.',
+        tags: [],
+        stays: [
+          { bookingId: null, checkin: '2026-10-02', checkout: '2026-10-03', room: 'Deluxe Suite', roomId: 'deluxe-suite', nights: 1, total: 960, status: 'Completed' },
+          { bookingId: null, checkin: '2026-04-17', checkout: '2026-04-18', room: 'Deluxe Suite', roomId: 'deluxe-suite', nights: 1, total: 960, status: 'Completed' }
+        ] },
+      { id: 'g-adwoa', sample: true, name: 'Adwoa Osei', phone: '024 333 5566', email: '',
+        prefs: 'Loved the pool.',
+        notes: 'First stay in November.',
+        tags: [],
+        stays: [
+          { bookingId: null, checkin: '2026-11-13', checkout: '2026-11-14', room: 'Deluxe Suite', roomId: 'deluxe-suite', nights: 1, total: 960, status: 'Completed' }
+        ] },
+      { id: 'g-nana', sample: true, name: 'Nana Yaw', phone: '020 888 7766', email: '',
+        prefs: 'Always the King Room.',
+        notes: 'VIP — books every month.',
+        tags: ['VIP'],
+        stays: [
+          { bookingId: null, checkin: '2026-11-20', checkout: '2026-11-22', room: 'King Room', roomId: 'king-room', nights: 2, total: 3082, status: 'Completed' },
+          { bookingId: null, checkin: '2026-09-11', checkout: '2026-09-13', room: 'King Room', roomId: 'king-room', nights: 2, total: 3082, status: 'Completed' },
+          { bookingId: null, checkin: '2026-07-03', checkout: '2026-07-05', room: 'Queen Suite', roomId: 'queen-suite', nights: 2, total: 2228, status: 'Completed' },
+          { bookingId: null, checkin: '2026-05-15', checkout: '2026-05-17', room: 'Deluxe Suite', roomId: 'deluxe-suite', nights: 2, total: 1920, status: 'Completed' },
+          { bookingId: null, checkin: '2026-03-07', checkout: '2026-03-08', room: 'Family Suite', roomId: 'family-suite', nights: 1, total: 2138, status: 'Completed' }
+        ] }
+    ];
+  }
+  function seedFollowups() {
+    return [
+      { id: 'fu-ama', guestId: 'g-ama', guest: 'Ama Serwaa', reason: 'Stayed 6 months ago — send a return offer',
+        message: "Hi Ama, it's Lloyds Beach Resort & Spa! It's been a while since your last stay — we'd love to welcome you back to Kokrobite. Here's 10% off your next stay this month. Shall we hold a room for you?", sent: false },
+      { id: 'fu-efua', guestId: 'g-efua', guest: 'Efua Boateng', reason: 'Honeymoon anniversary in 2 weeks',
+        message: "Hi Efua, happy anniversary from all of us at Lloyds! You celebrated your honeymoon with us — come back and mark your first anniversary by the beach. We'd love to have you.", sent: false },
+      { id: 'fu-kofi', guestId: 'g-kofi', guest: 'Kofi Asante', reason: 'Asked about surf lessons',
+        message: "Hi Kofi, you asked about surf lessons on your last stay — the waves are great this week and our instructor has slots open. Want us to book you a session with your next stay?", sent: false },
+      { id: 'fu-adwoa', guestId: 'g-adwoa', guest: 'Adwoa Osei', reason: 'First stay — send a thank-you',
+        message: "Hi Adwoa, thank you for staying with us at Lloyds! We hope you enjoyed the pool and the beach. We'd love to welcome you back soon.", sent: false },
+      { id: 'fu-nana', guestId: 'g-nana', guest: 'Nana Yaw', reason: 'Monthly regular — confirm the next booking',
+        message: "Hi Nana Yaw, your usual King Room is free next month — shall we hold it for you as usual?", sent: false }
+    ];
+  }
+
   /* ---------- load / save ---------- */
   var data = null;
   function load() {
@@ -89,7 +185,15 @@
       var raw = localStorage.getItem(KEY);
       if (raw) {
         var parsed = JSON.parse(raw);
-        if (parsed && parsed.rooms && parsed.bookings && parsed.settings) { data = parsed; return data; }
+        if (parsed && parsed.rooms && parsed.bookings && parsed.settings) {
+          data = parsed;
+          /* Stores seeded before the Guests tab existed have no guests or
+             follow-ups — add the sample ones without touching the rest. */
+          if (!data.guests) { data.guests = seedGuests(); }
+          if (!data.followups) { data.followups = seedFollowups(); }
+          save();
+          return data;
+        }
       }
     } catch (e) { /* corrupted store: fall through to a fresh seed */ }
     data = seed();
@@ -195,6 +299,156 @@
     return false;
   }
 
+  /* ---------- guests (CRM) ----------
+     A guest record is created only when a booking is CONFIRMED — a
+     WhatsApp enquiry ("New") never creates one. Completing a booking
+     moves its stay into the guest's stay history and total spent.
+     Guests are matched by name + phone (phone compared digits-only). */
+  function normName(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+  function normPhone(s) { return String(s || '').replace(/\D/g, '').replace(/^233/, '0'); }
+  function getGuests() {
+    var list = (load().guests || []).slice();
+    list.sort(function (a, b) { return normName(a.name).localeCompare(normName(b.name)); });
+    return list;
+  }
+  function getGuest(id) {
+    var list = load().guests || [];
+    for (var i = 0; i < list.length; i++) { if (list[i].id === id) { return list[i]; } }
+    return null;
+  }
+  function getGuestByNamePhone(name, phone) {
+    var n = normName(name), p = normPhone(phone);
+    var list = load().guests || [];
+    for (var i = 0; i < list.length; i++) {
+      if (normName(list[i].name) === n && normPhone(list[i].phone) === p) { return list[i]; }
+    }
+    return null;
+  }
+  function completedStays(g) {
+    return (g.stays || []).filter(function (s) { return s.status === 'Completed'; });
+  }
+  function guestTotal(g) {
+    return completedStays(g).reduce(function (sum, s) { return sum + (s.total || 0); }, 0);
+  }
+  function guestLastStay(g) {
+    var done = completedStays(g);
+    if (!done.length) { return ''; }
+    var last = done[0].checkout;
+    done.forEach(function (s) { if (s.checkout > last) { last = s.checkout; } });
+    return last;
+  }
+  function guestStats(g) {
+    var done = completedStays(g);
+    var upcoming = (g.stays || []).filter(function (s) { return s.status === 'Confirmed'; });
+    return { stays: done.length, total: guestTotal(g), lastStay: guestLastStay(g), upcoming: upcoming.length,
+      isRepeat: done.length >= 2, isNew: done.length <= 1, isVip: (g.tags || []).indexOf('VIP') !== -1 };
+  }
+  function addGuest(g) {
+    var d = load();
+    d.guests = d.guests || [];
+    var guest = {
+      id: 'g' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36),
+      sample: false,
+      name: (g.name || '').trim(),
+      phone: (g.phone || '').trim(),
+      email: (g.email || '').trim(),
+      prefs: (g.prefs || '').trim(),
+      notes: (g.notes || '').trim(),
+      tags: [],
+      stays: []
+    };
+    d.guests.push(guest);
+    save();
+    return guest;
+  }
+  function updateGuest(id, patch) {
+    var g = getGuest(id);
+    if (!g) { return false; }
+    if (patch.notes != null) { g.notes = String(patch.notes); }
+    if (patch.prefs != null) { g.prefs = String(patch.prefs); }
+    if (patch.tags) { g.tags = patch.tags; }
+    save();
+    return true;
+  }
+  function stayFromBooking(b, status) {
+    return {
+      bookingId: b.id,
+      checkin: b.checkin, checkout: b.checkout,
+      room: b.room, roomId: b.roomId || '',
+      nights: b.nights || nightsBetween(b.checkin, b.checkout),
+      total: b.total || 0,
+      status: status
+    };
+  }
+  /* Bring a booking's guest record in line with the booking's status.
+     Confirmed -> guest exists with an upcoming stay for this booking.
+     Completed -> that stay is in the guest's history (converted from the
+     upcoming stay when there is one, added directly otherwise).
+     New / Cancelled -> any stay linked to this booking is removed. */
+  function syncBookingGuest(bookingId) {
+    var d = load();
+    var booking = null;
+    d.bookings.forEach(function (b) { if (b.id === bookingId) { booking = b; } });
+    if (!booking) { return null; }
+    var guest = getGuestByNamePhone(booking.guest, booking.phone);
+    if (booking.status === 'Confirmed') {
+      if (!guest) {
+        guest = addGuest({ name: booking.guest, phone: booking.phone, email: booking.email, notes: '' });
+      }
+      guest.stays = guest.stays || [];
+      var has = guest.stays.some(function (s) { return s.bookingId === bookingId; });
+      if (!has) { guest.stays.push(stayFromBooking(booking, 'Confirmed')); }
+      save();
+      return guest;
+    }
+    if (booking.status === 'Completed') {
+      if (!guest) {
+        guest = addGuest({ name: booking.guest, phone: booking.phone, email: booking.email, notes: '' });
+      }
+      guest.stays = guest.stays || [];
+      var done = false;
+      guest.stays.forEach(function (s) {
+        if (s.bookingId === bookingId) {
+          s.status = 'Completed';
+          s.checkin = booking.checkin; s.checkout = booking.checkout;
+          s.room = booking.room; s.roomId = booking.roomId || s.roomId;
+          s.nights = booking.nights || s.nights; s.total = booking.total || s.total;
+          done = true;
+        }
+      });
+      if (!done) { guest.stays.push(stayFromBooking(booking, 'Completed')); }
+      save();
+      return guest;
+    }
+    /* New or Cancelled: drop any stay linked to this booking. */
+    (d.guests || []).forEach(function (g) {
+      var before = (g.stays || []).length;
+      g.stays = (g.stays || []).filter(function (s) { return s.bookingId !== bookingId; });
+      if (g.stays.length !== before) { save(); }
+    });
+    return guest;
+  }
+  function removeBookingStay(bookingId) {
+    var d = load();
+    var changed = false;
+    (d.guests || []).forEach(function (g) {
+      var before = (g.stays || []).length;
+      g.stays = (g.stays || []).filter(function (s) { return s.bookingId !== bookingId; });
+      if (g.stays.length !== before) { changed = true; }
+    });
+    if (changed) { save(); }
+  }
+
+  /* ---------- follow-ups ---------- */
+  function getFollowups() { return (load().followups || []).slice(); }
+  function markFollowupSent(id, sent) {
+    var list = load().followups || [];
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].id === id) { list[i].sent = !!sent; save(); return true; }
+    }
+    return false;
+  }
+
   /* ---------- availability ----------
      A room type is free for a date range when, for every night, the active
      bookings covering that night are fewer than the rooms of that type,
@@ -280,6 +534,15 @@
     addBooking: addBooking,
     updateBooking: updateBooking,
     deleteBooking: deleteBooking,
+    getGuests: getGuests,
+    getGuest: getGuest,
+    addGuest: addGuest,
+    updateGuest: updateGuest,
+    guestStats: guestStats,
+    syncBookingGuest: syncBookingGuest,
+    removeBookingStay: removeBookingStay,
+    getFollowups: getFollowups,
+    markFollowupSent: markFollowupSent,
     isBlocked: isBlocked,
     bookedCount: bookedCount,
     isAvailableTonight: isAvailableTonight,

@@ -86,7 +86,7 @@
       <nav class="main-nav" aria-label="Main navigation"><a href="index.html">Home</a><a href="rooms.html">Rooms</a><a href="beachfront.html">Beachfront</a><a href="pool.html">Pool</a><a href="spa.html">Spa</a><a href="dining.html">Dining</a><a href="gallery.html">Gallery</a><a href="about.html">About</a><a href="contact.html">Contact</a><a class="btn" href="rooms.html#book">Book Your Stay</a></nav>
     </div></header>
 <main>
-<section class="page-hero"><div class="wrap"><p class="eyebrow">Staff Only</p><h1>Staff Dashboard</h1><p>Manage bookings, rooms, prices and availability for Lloyds Beach Resort &amp; Spa.</p><p><span class="demo-badge">Demo</span> <span style="color:#e8d9b0">Demo — data saves in this browser only. Nothing here changes the live site for anyone else.</span></p></div></section>
+<section class="page-hero"><div class="wrap"><p class="eyebrow">Staff Only</p><h1>Staff Dashboard</h1><p>Manage bookings, guests, rooms, prices and availability for Lloyds Beach Resort &amp; Spa.</p><p><span class="demo-badge">Demo</span> <span style="color:#e8d9b0">Demo — data saves in this browser only. Nothing here changes the live site for anyone else.</span></p></div></section>
 
   <section class="section"><div class="wrap">
     <div id="adminLogin" class="admin-login form-card">
@@ -111,6 +111,7 @@
       </div>
       <div class="admin-tabs" role="tablist" aria-label="Dashboard sections">
         <button class="admin-tab active" data-tab="bookings" type="button">Bookings</button>
+        <button class="admin-tab" data-tab="guests" type="button">Guests</button>
         <button class="admin-tab" data-tab="rooms" type="button">Rooms &amp; prices</button>
         <button class="admin-tab" data-tab="availability" type="button">Availability</button>
         <button class="admin-tab" data-tab="details" type="button">Hotel details</button>
@@ -125,6 +126,42 @@
           <div class="field"><label for="fltRoom">Room</label><select id="fltRoom"><option value="">All rooms</option></select></div>
         </div>
         <div id="bookingList"></div>
+      </div>
+
+      <div id="tab-guests" class="admin-panel" style="display:none">
+        <h2>Guests</h2>
+        <p class="admin-note">Guest records from confirmed and completed stays. A WhatsApp enquiry does not create a guest — the guest appears here when staff confirm the booking, and the stay joins their history when it is completed. Guests marked <span class="sample-pill">Sample</span> are demo data.</p>
+        <div class="crm-subtabs" role="tablist" aria-label="Guest sections">
+          <button class="crm-subtab active" data-crm="guests" type="button">Guests</button>
+          <button class="crm-subtab" data-crm="followups" type="button">Follow-ups</button>
+          <button class="crm-subtab" data-crm="insights" type="button">Insights</button>
+        </div>
+        <div id="crm-guests">
+          <div class="admin-stats" id="guestStats"></div>
+          <div class="admin-filters">
+            <div class="field"><label for="guestSearch">Search guests</label><input id="guestSearch" type="search" placeholder="Search by name"></div>
+            <div class="field"><label>Filter</label><div class="crm-pills" id="guestPills">
+              <button class="crm-pill active" data-guest-filter="all" type="button">All</button>
+              <button class="crm-pill" data-guest-filter="repeat" type="button">Repeat guests</button>
+              <button class="crm-pill" data-guest-filter="new" type="button">New</button>
+              <button class="crm-pill" data-guest-filter="vip" type="button">VIP</button>
+            </div></div>
+          </div>
+          <p><button class="btn small" id="guestAddBtn" type="button">Add guest</button></p>
+          <form id="guestAddForm" class="admin-form" style="display:none" novalidate>
+            <div class="form-error" role="alert"></div>
+            <div class="field"><label for="ga-name">Name</label><input id="ga-name" name="name" type="text" placeholder="Guest's full name"></div>
+            <div class="field"><label for="ga-phone">Phone</label><input id="ga-phone" name="phone" type="tel" placeholder="055 000 0000"></div>
+            <div class="field"><label for="ga-notes">Notes</label><input id="ga-notes" name="notes" type="text" placeholder="e.g. Walk-in, prefers a quiet room"></div>
+            <button class="btn" type="submit">Save guest</button>
+            <button class="btn ghost-dark" id="guestAddCancel" type="button">Cancel</button>
+            <span class="admin-saved" id="guestAddSaved" role="status"></span>
+          </form>
+          <div id="guestList"></div>
+          <div id="guestDetail"></div>
+        </div>
+        <div id="crm-followups" style="display:none"><div id="followupList" class="crm-followups"></div></div>
+        <div id="crm-insights" style="display:none"><div id="insightsView"></div></div>
       </div>
 
       <div id="tab-rooms" class="admin-panel" style="display:none">

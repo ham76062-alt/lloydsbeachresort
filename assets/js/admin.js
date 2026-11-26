@@ -70,6 +70,8 @@
     if (!window.confirm('Reset the demo? All bookings, prices, blocked dates and details go back to the sample data.')) { return; }
     store.resetDemo();
     avYear = null; avMonth = null;
+    crmView = 'guests'; guestFilter = 'all'; guestSearchQ = ''; selectedGuestId = null;
+    var gs = $('guestSearch'); if (gs) { gs.value = ''; }
     renderAll();
     window.scrollTo(0, 0);
   });
@@ -91,6 +93,7 @@
   }
   function renderTab(tab) {
     if (tab === 'bookings') { renderBookings(); }
+    else if (tab === 'guests') { renderGuests(); }
     else if (tab === 'rooms') { renderRooms(); }
     else if (tab === 'availability') { renderAvailability(); }
     else if (tab === 'details') { renderDetails(); }
@@ -150,20 +153,255 @@
     el.innerHTML = '<table class="admin-table"><thead><tr><th>Guest</th><th>Room</th><th>Dates</th><th>Nights</th><th>Guests</th><th>Total</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>';
     el.querySelectorAll('[data-booking-status]').forEach(function (sel) {
       sel.addEventListener('change', function () {
-        store.updateBooking(sel.getAttribute('data-booking-status'), { status: sel.value });
+        var id = sel.getAttribute('data-booking-status');
+        var old = null;
+        store.getBookings().forEach(function (b) { if (b.id === id) { old = b.status; } });
+        store.updateBooking(id, { status: sel.value });
+        /* Guests: a booking only becomes a guest record when staff
+           confirm it; completing it adds the stay to their history.
+           A WhatsApp enquiry ("New") never creates a guest. */
+        if (old !== sel.value) { store.syncBookingGuest(id); }
         renderBookings();
       });
     });
     el.querySelectorAll('[data-booking-delete]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         if (!window.confirm('Delete this booking? This cannot be undone.')) { return; }
-        store.deleteBooking(btn.getAttribute('data-booking-delete'));
+        var id = btn.getAttribute('data-booking-delete');
+        store.deleteBooking(id);
+        store.removeBookingStay(id);
         renderBookings();
       });
     });
   }
   $('fltStatus').addEventListener('change', renderBookings);
   $('fltRoom').addEventListener('change', renderBookings);
+
+  /* ---------- guests (CRM) ----------
+     Stats and insights are computed from the guest records in the demo
+     store, so they move when a guest is added or a stay is completed. */
+  var crmView = 'guests';
+  var guestFilter = 'all';
+  var guestSearchQ = '';
+  var selectedGuestId = null;
+
+  document.querySelectorAll('.crm-subtab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      crmView = btn.getAttribute('data-crm');
+      document.querySelectorAll('.crm-subtab').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      $('crm-guests').style.display = crmView === 'guests' ? '' : 'none';
+      $('crm-followups').style.display = crmView === 'followups' ? '' : 'none';
+      $('crm-insights').style.display = crmView === 'insights' ? '' : 'none';
+      renderGuests();
+    });
+  });
+  document.querySelectorAll('[data-guest-filter]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      guestFilter = btn.getAttribute('data-guest-filter');
+      document.querySelectorAll('[data-guest-filter]').forEach(function (b) { b.classList.toggle('active', b === btn); });
+      renderGuestList();
+    });
+  });
+  $('guestSearch').addEventListener('input', function () {
+    guestSearchQ = $('guestSearch').value.trim().toLowerCase();
+    renderGuestList();
+  });
+  $('guestAddBtn').addEventListener('click', function () {
+    var f = $('guestAddForm');
+    f.style.display = f.style.display === 'none' ? '' : 'none';
+    $('guestAddSaved').textContent = '';
+  });
+  $('guestAddCancel').addEventListener('click', function () {
+    $('guestAddForm').style.display = 'none';
+    $('guestAddForm').reset();
+  });
+  $('guestAddForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = $('guestAddForm');
+    var err = f.querySelector('.form-error');
+    err.classList.remove('show');
+    var name = f.querySelector('[name="name"]').value.trim();
+    var phone = f.querySelector('[name="phone"]').value.trim();
+    var notes = f.querySelector('[name="notes"]').value.trim();
+    if (!name) { err.textContent = 'Enter the guest\u2019s name.'; err.classList.add('show'); return; }
+    if (!phone) { err.textContent = 'Enter the guest\u2019s phone number.'; err.classList.add('show'); return; }
+    var guest = store.addGuest({ name: name, phone: phone, notes: notes });
+    f.reset();
+    f.style.display = 'none';
+    selectedGuestId = guest.id;
+    renderGuestList();
+    var saved = $('guestAddSaved');
+    if (saved) { saved.textContent = ''; }
+  });
+
+  function renderGuests() {
+    if (crmView === 'followups') { renderFollowups(); }
+    else if (crmView === 'insights') { renderInsights(); }
+    else { renderGuestList(); }
+  }
+  function guestTagHtml(g, st) {
+    var tags = [];
+    if (st.isVip) { tags.push('<span class="guest-tag vip">VIP</span>'); }
+    if (st.isRepeat) { tags.push('<span class="guest-tag">Repeat guest</span>'); }
+    else if (st.isNew) { tags.push('<span class="guest-tag">New</span>'); }
+    return '<span class="guest-tags">' + tags.join('') + '</span>';
+  }
+  function renderGuestList() {
+    var guests = store.getGuests();
+    var repeat = guests.filter(function (g) { return store.guestStats(g).isRepeat; }).length;
+    var today = dstr(new Date());
+    var weekEnd = dstr(new Date(Date.now() + 7 * 86400000));
+    var checkins = store.getBookings().filter(function (b) {
+      return (b.status === 'New' || b.status === 'Confirmed') && b.checkin >= today && b.checkin <= weekEnd;
+    }).length;
+    var due = store.getFollowups().filter(function (f) { return !f.sent; }).length;
+    $('guestStats').innerHTML =
+      '<div class="admin-stat"><b>' + guests.length + '</b><span>Total guests</span></div>' +
+      '<div class="admin-stat"><b>' + repeat + '</b><span>Repeat guests</span></div>' +
+      '<div class="admin-stat"><b>' + checkins + '</b><span>Check-ins this week</span></div>' +
+      '<div class="admin-stat"><b>' + due + '</b><span>Follow-ups due</span></div>';
+    var filtered = guests.filter(function (g) {
+      var st = store.guestStats(g);
+      if (guestFilter === 'repeat' && !st.isRepeat) { return false; }
+      if (guestFilter === 'new' && !st.isNew) { return false; }
+      if (guestFilter === 'vip' && !st.isVip) { return false; }
+      if (guestSearchQ && g.name.toLowerCase().indexOf(guestSearchQ) === -1) { return false; }
+      return true;
+    });
+    var el = $('guestList');
+    if (!filtered.length) {
+      el.innerHTML = '<p class="admin-note">No guests match this search.</p>';
+      renderGuestDetail();
+      return;
+    }
+    var rows = filtered.map(function (g) {
+      var st = store.guestStats(g);
+      return '<tr class="guest-row" data-guest-row="' + esc(g.id) + '">' +
+        '<td data-label="Guest"><b>' + esc(g.name) + '</b>' + (g.sample ? '<span class="sample-pill">Sample</span>' : '') + '<br><span style="color:var(--muted);font-size:.85rem">' + esc(g.phone || '') + '</span></td>' +
+        '<td data-label="Stays">' + st.stays + (st.upcoming ? ' <span style="color:var(--muted)">(+' + st.upcoming + ' upcoming)</span>' : '') + '</td>' +
+        '<td data-label="Last stay">' + (st.lastStay ? esc(store.prettyDate(st.lastStay)) : '—') + '</td>' +
+        '<td data-label="Total spent">' + fmt(st.total) + '</td>' +
+        '<td data-label="Tags">' + guestTagHtml(g, st) + '</td>' +
+        '</tr>';
+    }).join('');
+    el.innerHTML = '<table class="admin-table"><thead><tr><th>Guest</th><th>Stays</th><th>Last stay</th><th>Total spent</th><th>Tags</th></tr></thead><tbody>' + rows + '</tbody></table>';
+    el.querySelectorAll('[data-guest-row]').forEach(function (tr) {
+      tr.addEventListener('click', function () {
+        selectedGuestId = tr.getAttribute('data-guest-row');
+        renderGuestDetail();
+        var d = $('guestDetail');
+        if (d) { d.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      });
+    });
+    renderGuestDetail();
+  }
+  function renderGuestDetail() {
+    var el = $('guestDetail');
+    if (!el) { return; }
+    var g = selectedGuestId ? store.getGuest(selectedGuestId) : null;
+    if (!g) { el.innerHTML = ''; return; }
+    var st = store.guestStats(g);
+    var done = (g.stays || []).filter(function (s) { return s.status === 'Completed'; }).slice()
+      .sort(function (a, b) { return String(b.checkout).localeCompare(String(a.checkout)); });
+    var upcoming = (g.stays || []).filter(function (s) { return s.status === 'Confirmed'; });
+    function stayRows(list) {
+      return list.map(function (s) {
+        return '<tr><td data-label="Dates">' + esc(store.prettyDate(s.checkin)) + ' → ' + esc(store.prettyDate(s.checkout)) + '</td>' +
+          '<td data-label="Room">' + esc(s.room) + '</td>' +
+          '<td data-label="Nights">' + (s.nights || '') + '</td>' +
+          '<td data-label="Total">' + fmt(s.total || 0) + '</td>' +
+          '<td data-label="Status">' + esc(s.status) + '</td></tr>';
+      }).join('');
+    }
+    el.innerHTML = '<div class="guest-detail">' +
+      '<h3>' + esc(g.name) + '</h3>' +
+      '<p class="meta">' + esc(g.phone || '') + (g.email ? ' · ' + esc(g.email) : '') + ' · ' + st.stays + ' stay' + (st.stays === 1 ? '' : 's') + ' · ' + fmt(st.total) + ' spent</p>' +
+      '<p>' + guestTagHtml(g, st) + '</p>' +
+      (g.prefs ? '<p><b>Preferences:</b> ' + esc(g.prefs) + '</p>' : '') +
+      (upcoming.length ? '<h4 style="margin:16px 0 8px">Upcoming stay</h4><table class="admin-table"><thead><tr><th>Dates</th><th>Room</th><th>Nights</th><th>Total</th><th>Status</th></tr></thead><tbody>' + stayRows(upcoming) + '</tbody></table>' : '') +
+      (done.length ? '<h4 style="margin:16px 0 8px">Stay history</h4><table class="admin-table"><thead><tr><th>Dates</th><th>Room</th><th>Nights</th><th>Total</th><th>Status</th></tr></thead><tbody>' + stayRows(done) + '</tbody></table>' : '<p class="admin-note">No completed stays yet.</p>') +
+      '<div class="field" style="margin-top:16px"><label for="guestNotes">Staff notes</label><textarea id="guestNotes" placeholder="Notes only staff can see — e.g. prefers a quiet room, allergic to peanuts">' + esc(g.notes || '') + '</textarea></div>' +
+      '<button class="btn small" type="button" id="guestNotesSave">Save notes</button>' +
+      '<span class="admin-saved" id="guestNotesSaved" role="status"></span>' +
+      '</div>';
+    $('guestNotesSave').addEventListener('click', function () {
+      store.updateGuest(g.id, { notes: $('guestNotes').value });
+      $('guestNotesSaved').textContent = 'Saved.';
+    });
+  }
+  function renderFollowups() {
+    var list = store.getFollowups();
+    var el = $('followupList');
+    if (!list.length) { el.innerHTML = '<p class="admin-note">No follow-ups.</p>'; return; }
+    el.innerHTML = list.map(function (f) {
+      return '<div class="followup-card' + (f.sent ? ' sent' : '') + '">' +
+        '<h3>' + esc(f.guest) + '</h3>' +
+        '<p>' + esc(f.reason) + '</p>' +
+        '<button class="btn ghost-dark small" type="button" data-fu-show="' + esc(f.id) + '">' + (f.sent ? 'Message sent' : 'Show message') + '</button> ' +
+        (f.sent
+          ? '<button class="btn ghost-dark small" type="button" data-fu-undo="' + esc(f.id) + '">Mark not sent</button>'
+          : '<button class="btn small" type="button" data-fu-sent="' + esc(f.id) + '">Mark as sent</button>') +
+        '<div class="followup-msg" data-fu-msg="' + esc(f.id) + '" style="display:none">' + esc(f.message) + '</div>' +
+        '</div>';
+    }).join('');
+    el.querySelectorAll('[data-fu-show]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-fu-show');
+        var msg = el.querySelector('[data-fu-msg="' + id + '"]');
+        var show = msg.style.display === 'none';
+        msg.style.display = show ? '' : 'none';
+        btn.textContent = show ? 'Hide message' : 'Show message';
+      });
+    });
+    el.querySelectorAll('[data-fu-sent]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        store.markFollowupSent(btn.getAttribute('data-fu-sent'), true);
+        renderFollowups();
+      });
+    });
+    el.querySelectorAll('[data-fu-undo]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        store.markFollowupSent(btn.getAttribute('data-fu-undo'), false);
+        renderFollowups();
+      });
+    });
+  }
+  function renderInsights() {
+    var guests = store.getGuests();
+    var repeat = guests.filter(function (g) { return store.guestStats(g).isRepeat; }).length;
+    var rate = guests.length ? Math.round(repeat / guests.length * 100) : 0;
+    var roomCounts = {};
+    var monthCounts = {};
+    var MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    guests.forEach(function (g) {
+      (g.stays || []).forEach(function (s) {
+        if (s.status !== 'Completed') { return; }
+        roomCounts[s.room] = (roomCounts[s.room] || 0) + 1;
+        var m = parseDay(s.checkin);
+        if (m) { var key = MONTHS_SHORT[m.getMonth()]; monthCounts[key] = (monthCounts[key] || 0) + 1; }
+      });
+    });
+    function topEntries(counts, n) {
+      return Object.keys(counts).map(function (k) { return { label: k, n: counts[k] }; })
+        .sort(function (a, b) { return b.n - a.n; }).slice(0, n);
+    }
+    var topRooms = topEntries(roomCounts, 3);
+    var topMonths = topEntries(monthCounts, 3);
+    function barRow(label, value, max, suffix) {
+      var pct = max > 0 ? Math.round(value / max * 100) : 0;
+      return '<div class="crm-bar-row"><div class="bar-label"><span>' + esc(label) + '</span><b>' + esc(suffix) + '</b></div>' +
+        '<div class="crm-bar"><i style="width:' + pct + '%"></i></div></div>';
+    }
+    var h = '<div class="crm-bars">' +
+      '<div><h3>Repeat guests</h3><p class="admin-note">' + repeat + ' of ' + guests.length + ' guests have stayed more than once.</p>' +
+      barRow('Repeat-guest rate', rate, 100, rate + '%') + '</div>' +
+      '<div><h3>Top rooms by stays</h3>' +
+      (topRooms.length ? topRooms.map(function (r) { return barRow(r.label, r.n, topRooms[0].n, r.n + ' stay' + (r.n === 1 ? '' : 's')); }).join('') : '<p class="admin-note">No completed stays yet.</p>') + '</div>' +
+      '<div><h3>Busiest months</h3>' +
+      (topMonths.length ? topMonths.map(function (r) { return barRow(r.label, r.n, topMonths[0].n, r.n + ' stay' + (r.n === 1 ? '' : 's')); }).join('') : '<p class="admin-note">No completed stays yet.</p>') + '</div>' +
+      '</div>';
+    $('insightsView').innerHTML = h;
+  }
 
   /* ---------- rooms & prices ---------- */
   function renderRooms() {
