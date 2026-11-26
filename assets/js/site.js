@@ -20,6 +20,46 @@ var LLOYDS = {
 (function () {
   'use strict';
 
+  /* ---- Demo store: prices, package and times from the staff dashboard ----
+     The demo store (assets/js/demo-store.js) holds the dashboard's rooms,
+     prices and settings in this browser only. At load, the prices on room
+     cards, room detail pages, "Prices from" headers, booking-form room
+     options, the package and the check-in/out times are re-rendered from
+     it. The values written on the pages stay as the fallback. */
+  function fmtNum(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function escHtml(t) { return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function applyDemoPrices() {
+    var demo = window.LloydsDemo;
+    if (!demo) { return; }
+    document.querySelectorAll('[data-room-price]').forEach(function (el) {
+      var price = demo.getPrice(el.getAttribute('data-room-price'));
+      if (price == null) { return; }
+      if (el.classList.contains('price')) {
+        var small = el.querySelector('small');
+        el.innerHTML = 'GH₵' + fmtNum(price) + ' ' + (small ? small.outerHTML : '');
+      } else {
+        el.textContent = 'GH₵' + fmtNum(price);
+      }
+    });
+    var min = demo.getMinPrice();
+    if (min != null) {
+      document.querySelectorAll('[data-from-price]').forEach(function (el) { el.textContent = 'GH₵' + fmtNum(min); });
+    }
+    var s = demo.getSettings();
+    document.querySelectorAll('[data-pkg-price]').forEach(function (el) {
+      el.innerHTML = 'GH₵' + fmtNum(s.packagePrice) + '<small>' + escHtml(s.packageNote) + '</small>';
+    });
+    document.querySelectorAll('[data-pkg-name]').forEach(function (el) { el.textContent = s.packageName; });
+    document.querySelectorAll('[data-checkinout]').forEach(function (el) {
+      el.textContent = 'Check-in from ' + s.checkin + ' · Check-out before ' + s.checkout;
+    });
+    document.querySelectorAll('.booking-form select[name="room"] option').forEach(function (opt) {
+      var price = demo.getPrice(opt.value);
+      if (price != null) { opt.textContent = opt.value + ' — GH₵' + fmtNum(price) + ' / night'; }
+    });
+  }
+  applyDemoPrices();
+
   /* ---- Mobile menu ---- */
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.querySelector('.main-nav');
@@ -127,7 +167,10 @@ var LLOYDS = {
     lines.push('Phone: ' + f.phone.value.trim());
     if (f.email.value.trim()) { lines.push('Email: ' + f.email.value.trim()); }
     if (f.requests.value.trim()) { lines.push('Special requests: ' + f.requests.value.trim()); }
-    return 'https://wa.me/' + LLOYDS.whatsapp + '?text=' + encodeURIComponent(lines.join('\n'));
+    /* The WhatsApp number comes from the demo store when the staff
+       dashboard has changed it; otherwise the confirmed number. */
+    var wa = (window.LloydsDemo && LloydsDemo.getSettings().whatsapp) || LLOYDS.whatsapp;
+    return 'https://wa.me/' + wa + '?text=' + encodeURIComponent(lines.join('\n'));
   }
 
   /* ---- Room booking enquiry forms ---- */
@@ -137,7 +180,15 @@ var LLOYDS = {
       function (f) {
         if (!f.name.value.trim()) { return 'Please enter your full name.'; }
         if (!f.phone.value.trim()) { return 'Please enter your phone number so the resort can reach you.'; }
-        return needDate(f);
+        var d = needDate(f);
+        if (d) { return d; }
+        /* Demo store: refuse the enquiry when the room is full or a night
+           is blocked, before anything is sent. */
+        if (window.LloydsDemo) {
+          var chk = LloydsDemo.check(f.room.value, f.checkin.value, f.checkout.value);
+          if (!chk.ok) { return chk.reason; }
+        }
+        return null;
       },
       function (f) {
         return summaryRows([
@@ -153,6 +204,27 @@ var LLOYDS = {
         ]);
       },
       function (f, form) {
+        /* Demo store: save the booking for the staff dashboard first, so
+           it shows in the bookings list with its total. */
+        if (window.LloydsDemo) {
+          var inD = new Date(f.checkin.value + 'T00:00:00');
+          var outD = new Date(f.checkout.value + 'T00:00:00');
+          var nights = Math.round((outD - inD) / 86400000);
+          var guests = f.adults.value;
+          if (f.children.value && f.children.value !== 'No children') { guests += ', ' + f.children.value; }
+          LloydsDemo.addBooking({
+            guest: f.name.value.trim(),
+            phone: f.phone.value.trim(),
+            email: f.email.value.trim(),
+            room: f.room.value,
+            checkin: f.checkin.value,
+            checkout: f.checkout.value,
+            nights: nights,
+            guests: guests,
+            requests: f.requests.value.trim(),
+            status: 'New'
+          });
+        }
         var url = bookingWhatsAppUrl(f);
         var waBtn = form.querySelector('[data-whatsapp]');
         if (waBtn) { waBtn.href = url; }
