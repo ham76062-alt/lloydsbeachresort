@@ -316,13 +316,19 @@ var LLOYDS = {
       });
   });
 
-  /* ---- Hero availability search -> feeds the booking form ---- */
+  /* ---- Hero availability search: check the staff availability first,
+     then offer to continue to the booking form ---- */
   var searchForm = document.querySelector('.hero-search');
   if (searchForm) {
-    searchForm.addEventListener('submit', function (ev) {
-      ev.preventDefault();
+    var heroResult = document.getElementById('heroResult');
+    function showHeroResult(kind, html) {
+      if (!heroResult) { return; }
+      heroResult.className = 'hero-result show ' + kind;
+      heroResult.innerHTML = html;
+    }
+    function fillBookingForm() {
       var target = document.querySelector('#book');
-      if (!target) { return; }
+      if (!target) { return null; }
       var bookForm = target.querySelector('.booking-form') || document.querySelector('.booking-form');
       if (bookForm) {
         var map = { checkin: 'checkin', checkout: 'checkout', guests: 'adults', room: 'room' };
@@ -332,10 +338,67 @@ var LLOYDS = {
           if (src && dst && src.value) { dst.value = src.value; }
         });
       }
+      return target;
+    }
+    function continueToBooking() {
+      var target = fillBookingForm();
+      if (!target) { return; }
       target.scrollIntoView({ behavior: 'smooth' });
+      var bookForm = target.querySelector('.booking-form') || document.querySelector('.booking-form');
       var nameField = bookForm && bookForm.querySelector('[name="name"]');
       if (nameField) { setTimeout(function () { nameField.focus({ preventScroll: true }); }, 700); }
+    }
+    function runHeroCheck() {
+      var checkin = searchForm.querySelector('[name="checkin"]').value;
+      var checkout = searchForm.querySelector('[name="checkout"]').value;
+      var room = searchForm.querySelector('[name="room"]').value;
+      if (!checkin) { showHeroResult('no', '<p>Please choose a check-in date.</p>'); return; }
+      if (!checkout) { showHeroResult('no', '<p>Please choose a check-out date.</p>'); return; }
+      var today = new Date().toISOString().split('T')[0];
+      if (checkin < today) { showHeroResult('no', '<p>Check-in cannot be in the past.</p>'); return; }
+      if (checkout <= checkin) { showHeroResult('no', '<p>Check-out must be after check-in.</p>'); return; }
+      var demo = window.LloydsDemo;
+      if (!demo) { continueToBooking(); return; }
+      var res = demo.check(room, checkin, checkout);
+      if (res.ok) {
+        var nights = demo.nightsBetween(checkin, checkout);
+        showHeroResult('ok',
+          '<p><b>' + esc(room) + '</b> is available from ' + esc(demo.prettyDate(checkin)) +
+          ' to ' + esc(demo.prettyDate(checkout)) + ' (' + nights + (nights === 1 ? ' night' : ' nights') + ').</p>' +
+          '<button type="button" class="btn gold" data-hero-continue>Continue to booking</button>');
+        return;
+      }
+      var alts = demo.getRooms().filter(function (r) {
+        return r.name !== room && demo.check(r.name, checkin, checkout).ok;
+      });
+      var html = '<p>' + esc(res.reason || ('Sorry — the ' + room + ' is not available for those dates.')) + '</p>';
+      if (alts.length) {
+        html += '<p>Available for those dates:</p>';
+        alts.forEach(function (r) {
+          html += '<button type="button" class="hero-alt" data-hero-alt="' + esc(r.name) + '">' +
+            esc(r.name) + ' — GH₵' + demo.fmt(r.price) + ' / night</button>';
+        });
+      } else {
+        html += '<p>Please try different dates.</p>';
+      }
+      showHeroResult('no', html);
+    }
+    searchForm.addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      runHeroCheck();
     });
+    if (heroResult) {
+      heroResult.addEventListener('click', function (ev) {
+        var cont = ev.target.closest('[data-hero-continue]');
+        if (cont) { continueToBooking(); return; }
+        var alt = ev.target.closest('[data-hero-alt]');
+        if (alt) {
+          var sel = searchForm.querySelector('[name="room"]');
+          if (sel) { sel.value = alt.getAttribute('data-hero-alt'); }
+          runHeroCheck();
+        }
+      });
+    }
   }
 
   /* ---- "Book This Room" buttons ---- */
@@ -426,5 +489,13 @@ var LLOYDS = {
       if (e.key === 'ArrowLeft') { show(current - 1); }
       if (e.key === 'ArrowRight') { show(current + 1); }
     });
+  }
+  /* ---- Back to top button ---- */
+  var toTop = document.getElementById('toTop');
+  if (toTop) {
+    var toggleTop = function () { toTop.classList.toggle('show', window.scrollY > 300); };
+    window.addEventListener('scroll', toggleTop, { passive: true });
+    toggleTop();
+    toTop.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
   }
 })();
