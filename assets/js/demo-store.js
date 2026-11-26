@@ -246,6 +246,17 @@
     return { ok: true };
   }
 
+  /* Tonight's availability for the rooms page badge: a room type is
+     "Not available" tonight when tonight is blocked in the calendar, or
+     active bookings covering tonight already fill every room of the type. */
+  function isAvailableTonight(roomId) {
+    var room = getRoom(roomId);
+    if (!room) { return true; }
+    var tonight = plusDays(0);
+    if (isBlocked(roomId, tonight)) { return false; }
+    return bookedCount(roomId, tonight) < room.count;
+  }
+
   function resetDemo() {
     data = seed();
     save();
@@ -271,6 +282,7 @@
     deleteBooking: deleteBooking,
     isBlocked: isBlocked,
     bookedCount: bookedCount,
+    isAvailableTonight: isAvailableTonight,
     toggleBlocked: toggleBlocked,
     check: check,
     nightsBetween: nightsBetween,

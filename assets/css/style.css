@@ -409,3 +409,10 @@ h1,h2,h3,h4{font-family:var(--serif);font-weight:600;line-height:1.15;color:var(
   .av-day{font-size:.8rem}
   .av-day .b{font-size:.55rem;line-height:1.25;text-align:center}
 }
+
+/* ---- Tonight availability badge (rooms page + room detail pages) ---- */
+.avail-badge{display:inline-block;font-family:var(--sans);font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:999px;padding:4px 12px;margin-bottom:10px}
+.avail-badge.avail-ok{background:#dff0e5;color:#2e6b4f;border:1px solid #b7d6c3}
+.avail-badge.avail-no{background:#f7e3df;color:#8a3b2e;border:1px solid #e3b8ae}
+.room-card .avail-badge{margin-bottom:12px}
+.avail-note{font-size:.92rem;color:var(--muted);margin:0 0 20px}

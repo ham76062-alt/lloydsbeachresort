@@ -60,6 +60,23 @@ var LLOYDS = {
   }
   applyDemoPrices();
 
+  /* ---- Tonight availability badges on room cards and detail pages ----
+     The badge follows the staff Availability calendar: "Not available"
+     when tonight is blocked or fully booked for that room type. */
+  function applyDemoAvailability() {
+    var demo = window.LloydsDemo;
+    if (!demo || !demo.isAvailableTonight) { return; }
+    document.querySelectorAll('[data-avail-for]').forEach(function (el) {
+      var room = demo.getRoomByName(el.getAttribute('data-avail-for'));
+      if (!room) { return; }
+      var ok = demo.isAvailableTonight(room.id);
+      el.textContent = ok ? 'Available' : 'Not available';
+      el.classList.toggle('avail-ok', ok);
+      el.classList.toggle('avail-no', !ok);
+    });
+  }
+  applyDemoAvailability();
+
   /* ---- Mobile menu ---- */
   var toggle = document.querySelector('.nav-toggle');
   var nav = document.querySelector('.main-nav');
